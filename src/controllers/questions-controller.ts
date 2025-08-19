@@ -1,21 +1,62 @@
-import { Request, Response } from "express"
-
+import { Request, Response } from "express";
+import { prisma } from "@/prisma";
+import { title } from "process";
 class QuestionsController {
-  async index(request: Request, response: Response) {
-    return response.json()
-  }
+    async index(request: Request, response: Response) {
+        const questions = await prisma.questions.findMany({
+            where: {
+                title: {
+                    contains: request.query.title?.toString().trim(),
+                    mode: "insensitive",
+                },
+            },
+            orderBy: {
+                title: "asc",
+            },
+        });
 
-  async create(request: Request, response: Response) {
-    return response.status(201).json()
-  }
+        return response.json(questions);
+    }
 
-  async update(request: Request, response: Response) {
-    return response.json()
-  }
+    async create(request: Request, response: Response) {
+        const { title, content, user_id } = request.body;
 
-  async remove(request: Request, response: Response) {
-    return response.json()
-  }
+        const question = await prisma.questions.create({
+            data: {
+                title,
+                content,
+                userId: user_id,
+            },
+        });
+
+        return response.status(201).json(question);
+    }
+
+    async update(request: Request, response: Response) {
+        const { id } = request.params;
+        const { title, content } = request.body;
+        await prisma.questions.update({
+            data: {
+                title,
+                content,
+            },
+            where: {
+                id,
+            },
+        });
+        return response.json();
+    }
+
+    async remove(request: Request, response: Response) {
+        const { id } = request.params;
+        await prisma.questions.delete({
+            where: {
+                id,
+            },
+        });
+
+        return response.json();
+    }
 }
 
-export { QuestionsController }
+export { QuestionsController };
